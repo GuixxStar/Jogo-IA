@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Duelo Laser 2P</title>
+  <title>Duelo Laser 2P - Obstáculos & Cooldown</title>
   <style>
     * {
       box-sizing: border-box;
@@ -54,8 +54,9 @@
   <canvas id="gameCanvas" width="800" height="400"></canvas>
 
   <div class="controls">
-    <p><strong>Jogador 1 (Verde):</strong> W (Sobe), S (Desce), Espaço (Atira)</p>
-    <p><strong>Jogador 2 (Vermelho):</strong> Seta Cima (Sobe), Seta Baixo (Desce), Enter (Atira)</p>
+    <p><strong>Jogador 1 (Verde):</strong> W (Sobe), S (Desce), Espaço (Atira - Cooldown 1s)</p>
+    <p><strong>Jogador 2 (Vermelho):</strong> Seta Cima (Sobe), Seta Baixo (Desce), Enter (Atira - Cooldown 1s)</p>
+    <p style="color: #ffd700; margin-top: 5px;"><strong>Obstáculo Cinza:</strong> Surge no meio da arena, bloqueia tiros e reaparece em novas posições!</p>
   </div>
 
   <script>
@@ -74,7 +75,8 @@
       width: 20,
       height: 50,
       color: '#00e676',
-      speed: 5
+      speed: 5,
+      lastShotTime: 0
     };
 
     const player2 = {
@@ -83,22 +85,54 @@
       width: 20,
       height: 50,
       color: '#ff5252',
-      speed: 5
+      speed: 5,
+      lastShotTime: 0
+    };
+
+    // Cooldown de 1 segundo (1000ms)
+    const SHOT_COOLDOWN = 1000;
+
+    // Obstáculo bloqueador
+    const obstacle = {
+      x: 0,
+      y: 0,
+      width: 30,
+      height: 90,
+      color: '#8b8d9b',
+      active: false
     };
 
     const keys = {};
     const bullets = [];
 
+    // Gerenciador do ciclo do obstáculo
+    function spawnObstacle() {
+      // Posição aleatória na região central (entre os 2 jogadores)
+      obstacle.x = Math.floor(Math.random() * (500 - 270 + 1)) + 270;
+      obstacle.y = Math.floor(Math.random() * (canvas.height - obstacle.height));
+      obstacle.active = true;
+
+      // O obstáculo fica ativo por 5 segundos
+      setTimeout(() => {
+        obstacle.active = false;
+        // Espera 2 segundos após sumir para gerar outro
+        setTimeout(spawnObstacle, 2000);
+      }, 5000);
+    }
+
+    // Inicia a primeira chamada do obstáculo após 2 segundos de jogo
+    setTimeout(spawnObstacle, 2000);
+
     window.addEventListener('keydown', (e) => {
-      // Evita rolar a página ao pressionar Espaço ou Setas
       if ([' ', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
         e.preventDefault();
       }
 
       keys[e.key] = true;
+      const now = Date.now();
 
-      // Tiro do Jogador 1 (Espaço)
-      if (e.key === ' ' || e.key === 'Spacebar') {
+      // Tiro do Jogador 1 (Espaço) com Cooldown
+      if ((e.key === ' ' || e.key === 'Spacebar') && (now - player1.lastShotTime >= SHOT_COOLDOWN)) {
         bullets.push({
           x: player1.x + player1.width,
           y: player1.y + player1.height / 2 - 3,
@@ -108,10 +142,11 @@
           color: '#00e676',
           owner: 1
         });
+        player1.lastShotTime = now;
       }
 
-      // Tiro do Jogador 2 (Enter)
-      if (e.key === 'Enter') {
+      // Tiro do Jogador 2 (Enter) com Cooldown
+      if (e.key === 'Enter' && (now - player2.lastShotTime >= SHOT_COOLDOWN)) {
         bullets.push({
           x: player2.x - 16,
           y: player2.y + player2.height / 2 - 3,
@@ -121,6 +156,7 @@
           color: '#ff5252',
           owner: 2
         });
+        player2.lastShotTime = now;
       }
     });
 
@@ -152,6 +188,18 @@
 
         // Remove tiros fora da tela
         if (b.x < 0 || b.x > canvas.width) {
+          bullets.splice(i, 1);
+          continue;
+        }
+
+        // Colisão com o Obstáculo Bloqueador
+        if (
+          obstacle.active &&
+          b.x + b.width >= obstacle.x &&
+          b.x <= obstacle.x + obstacle.width &&
+          b.y + b.height >= obstacle.y &&
+          b.y <= obstacle.y + obstacle.height
+        ) {
           bullets.splice(i, 1);
           continue;
         }
@@ -191,6 +239,16 @@
       // Desenha Jogador 2
       ctx.fillStyle = player2.color;
       ctx.fillRect(player2.x, player2.y, player2.width, player2.height);
+
+      // Desenha Obstáculo (se estive ativo)
+      if (obstacle.active) {
+        ctx.fillStyle = obstacle.color;
+        ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+        // Borda reflexiva para destacar o obstáculo
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+      }
 
       // Desenha Tiros
       bullets.forEach((b) => {
