@@ -1,2 +1,199 @@
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8"><link type="text/css" rel="stylesheet" href="resources/sheet.css" >
-<style type="text/css">.ritz .waffle a { color: inherit; }.ritz .waffle .s0{border-right:none;background-color:#ffffff;text-align:left;color:#000000;font-family:Arial;font-size:10pt;vertical-align:bottom;white-space:nowrap;direction:ltr;padding:2px 3px 2px 3px;}</style><div class="ritz grid-container" dir="ltr"><table class="waffle" cellspacing="0" cellpadding="0"><thead><tr><th class="row-header freezebar-origin-ltr"></th><th id="0C0" style="width:100px;" class="column-headers-background">A</th></tr></thead><tbody><tr style="height: 20px"><th id="0R0" style="height: 20px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 20px">1</div></th><td class="s0 softmerge" dir="ltr"><div class="softmerge-inner" style="width:598px;left:-1px">&lt;!DOCTYPE html&gt;<br>&lt;html lang=&quot;pt-BR&quot;&gt;<br>&lt;head&gt;<br>  &lt;meta charset=&quot;UTF-8&quot;&gt;<br>  &lt;title&gt;Duelo Laser 2P&lt;/title&gt;<br>  &lt;style&gt;<br>    * {<br>      box-sizing: border-box;<br>      margin: 0;<br>      padding: 0;<br>    }<br>    body {<br>      background-color: #121214;<br>      color: #ffffff;<br>      font-family: Arial, sans-serif;<br>      display: flex;<br>      flex-direction: column;<br>      align-items: center;<br>      justify-content: center;<br>      min-height: 100vh;<br>    }<br>    h1 {<br>      margin-bottom: 10px;<br>    }<br>    .score-board {<br>      font-size: 24px;<br>      margin-bottom: 15px;<br>      display: flex;<br>      gap: 40px;<br>      font-weight: bold;<br>    }<br>    canvas {<br>      border: 3px solid #323238;<br>      background-color: #1e1e24;<br>      border-radius: 8px;<br>    }<br>    .controls {<br>      margin-top: 15px;<br>      font-size: 15px;<br>      color: #a8a8b3;<br>      text-align: center;<br>    }<br>  &lt;/style&gt;<br>&lt;/head&gt;<br>&lt;body&gt;<br><br>  &lt;h1&gt;Duelo Laser 2P&lt;/h1&gt;<br>  &lt;div class=&quot;score-board&quot;&gt;<br>    &lt;span style=&quot;color: #00e676;&quot;&gt;Jogador 1 (Tecla A): &lt;span id=&quot;p1Score&quot;&gt;0&lt;/span&gt;&lt;/span&gt;<br>    &lt;span style=&quot;color: #ff5252;&quot;&gt;Jogador 2 (Tecla L): &lt;span id=&quot;p2Score&quot;&gt;0&lt;/span&gt;&lt;/span&gt;<br>  &lt;/div&gt;<br><br>  &lt;canvas id=&quot;gameCanvas&quot; width=&quot;800&quot; height=&quot;400&quot;&gt;&lt;/canvas&gt;<br><br>  &lt;div class=&quot;controls&quot;&gt;<br>    &lt;p&gt;Ambos os jogadores sobem e descem automaticamente na tela.&lt;/p&gt;<br>    &lt;p&gt;Aperte a sua tecla no momento certo para atirar no oponente!&lt;/p&gt;<br>  &lt;/div&gt;<br><br>  &lt;script&gt;<br>    const canvas = document.getElementById(&#39;gameCanvas&#39;);<br>    const ctx = canvas.getContext(&#39;2d&#39;);<br><br>    const p1ScoreEl = document.getElementById(&#39;p1Score&#39;);<br>    const p2ScoreEl = document.getElementById(&#39;p2Score&#39;);<br><br>    let p1Score = 0;<br>    let p2Score = 0;<br><br>    const player1 = {<br>      x: 30,<br>      y: 180,<br>      width: 20,<br>      height: 45,<br>      color: &#39;#00e676&#39;,<br>      speedY: 3.5,<br>      direction: 1<br>    };<br><br>    const player2 = {<br>      x: 750,<br>      y: 180,<br>      width: 20,<br>      height: 45,<br>      color: &#39;#ff5252&#39;,<br>      speedY: 3.5,<br>      direction: 1<br>    };<br><br>    const bullets = [];<br><br>    window.addEventListener(&#39;keydown&#39;, (e) =&gt; {<br>      const key = e.key.toLowerCase();<br>      <br>      // Tecla A -&gt; Jogador 1 atira para a direita<br>      if (key === &#39;a&#39;) {<br>        bullets.push({<br>          x: player1.x + player1.width,<br>          y: player1.y + player1.height / 2 - 3,<br>          width: 16,<br>          height: 6,<br>          speedX: 9,<br>          color: &#39;#00e676&#39;,<br>          owner: 1<br>        });<br>      }<br><br>      // Tecla L -&gt; Jogador 2 atira para a esquerda<br>      if (key === &#39;l&#39;) {<br>        bullets.push({<br>          x: player2.x - 16,<br>          y: player2.y + player2.height / 2 - 3,<br>          width: 16,<br>          height: 6,<br>          speedX: -9,<br>          color: &#39;#ff5252&#39;,<br>          owner: 2<br>        });<br>      }<br>    });<br><br>    function update() {<br>      // Movimento automático do Jogador 1<br>      player1.y += player1.speedY * player1.direction;<br>      if (player1.y &lt;= 0 || player1.y + player1.height &gt;= canvas.height) {<br>        player1.direction *= -1;<br>      }<br><br>      // Movimento automático do Jogador 2<br>      player2.y += player2.speedY * player2.direction;<br>      if (player2.y &lt;= 0 || player2.y + player2.height &gt;= canvas.height) {<br>        player2.direction *= -1;<br>      }<br><br>      // Atualização dos projéteis<br>      for (let i = bullets.length - 1; i &gt;= 0; i--) {<br>        const b = bullets[i];<br>        b.x += b.speedX;<br><br>        // Remover tiro fora da tela<br>        if (b.x &lt; 0 || b.x &gt; canvas.width) {<br>          bullets.splice(i, 1);<br>          continue;<br>        }<br><br>        // Colisão: Tiro do Jogador 1 acerta Jogador 2<br>        if (<br>          b.owner === 1 &amp;&amp;<br>          b.x + b.width &gt;= player2.x &amp;&amp;<br>          b.y + b.height &gt;= player2.y &amp;&amp;<br>          b.y &lt;= player2.y + player2.height<br>        ) {<br>          p1Score++;<br>          p1ScoreEl.textContent = p1Score;<br>          bullets.splice(i, 1);<br>        }<br><br>        // Colisão: Tiro do Jogador 2 acerta Jogador 1<br>        else if (<br>          b.owner === 2 &amp;&amp;<br>          b.x &lt;= player1.x + player1.width &amp;&amp;<br>          b.y + b.height &gt;= player1.y &amp;&amp;<br>          b.y &lt;= player1.y + player1.height<br>        ) {<br>          p2Score++;<br>          p2ScoreEl.textContent = p2Score;<br>          bullets.splice(i, 1);<br>        }<br>      }<br>    }<br><br>    function draw() {<br>      ctx.clearRect(0, 0, canvas.width, canvas.height);<br><br>      // Desenha Jogador 1<br>      ctx.fillStyle = player1.color;<br>      ctx.fillRect(player1.x, player1.y, player1.width, player1.height);<br><br>      // Desenha Jogador 2<br>      ctx.fillStyle = player2.color;<br>      ctx.fillRect(player2.x, player2.y, player2.width, player2.height);<br><br>      // Desenha Tiros<br>      bullets.forEach((b) =&gt; {<br>        ctx.fillStyle = b.color;<br>        ctx.fillRect(b.x, b.y, b.width, b.height);<br>      });<br>    }<br><br>    function gameLoop() {<br>      update();<br>      draw();<br>      requestAnimationFrame(gameLoop);<br>    }<br><br>    gameLoop();<br>  &lt;/script&gt;<br>&lt;/body&gt;<br>&lt;/html&gt;</div></td></tr></tbody></table></div>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Duelo Laser 2P</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background-color: #121214;
+      color: #ffffff;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    h1 {
+      margin-bottom: 10px;
+    }
+    .score-board {
+      font-size: 24px;
+      margin-bottom: 15px;
+      display: flex;
+      gap: 40px;
+      font-weight: bold;
+    }
+    canvas {
+      border: 3px solid #323238;
+      background-color: #1e1e24;
+      border-radius: 8px;
+    }
+    .controls {
+      margin-top: 15px;
+      font-size: 15px;
+      color: #a8a8b3;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Duelo Laser 2P</h1>
+  <div class="score-board">
+    <span style="color: #00e676;">Jogador 1 (Tecla A): <span id="p1Score">0</span></span>
+    <span style="color: #ff5252;">Jogador 2 (Tecla L): <span id="p2Score">0</span></span>
+  </div>
+
+  <canvas id="gameCanvas" width="800" height="400"></canvas>
+
+  <div class="controls">
+    <p>Ambos os jogadores sobem e descem automaticamente na tela.</p>
+    <p>Aperte a sua tecla no momento certo para atirar no oponente!</p>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const p1ScoreEl = document.getElementById('p1Score');
+    const p2ScoreEl = document.getElementById('p2Score');
+
+    let p1Score = 0;
+    let p2Score = 0;
+
+    const player1 = {
+      x: 30,
+      y: 180,
+      width: 20,
+      height: 45,
+      color: '#00e676',
+      speedY: 3.5,
+      direction: 1
+    };
+
+    const player2 = {
+      x: 750,
+      y: 180,
+      width: 20,
+      height: 45,
+      color: '#ff5252',
+      speedY: 3.5,
+      direction: 1
+    };
+
+    const bullets = [];
+
+    window.addEventListener('keydown', (e) => {
+      const key = e.key.toLowerCase();
+      
+      // Tecla A -> Jogador 1 atira para a direita
+      if (key === 'a') {
+        bullets.push({
+          x: player1.x + player1.width,
+          y: player1.y + player1.height / 2 - 3,
+          width: 16,
+          height: 6,
+          speedX: 9,
+          color: '#00e676',
+          owner: 1
+        });
+      }
+
+      // Tecla L -> Jogador 2 atira para a esquerda
+      if (key === 'l') {
+        bullets.push({
+          x: player2.x - 16,
+          y: player2.y + player2.height / 2 - 3,
+          width: 16,
+          height: 6,
+          speedX: -9,
+          color: '#ff5252',
+          owner: 2
+        });
+      }
+    });
+
+    function update() {
+      // Movimento automático do Jogador 1
+      player1.y += player1.speedY * player1.direction;
+      if (player1.y <= 0 || player1.y + player1.height >= canvas.height) {
+        player1.direction *= -1;
+      }
+
+      // Movimento automático do Jogador 2
+      player2.y += player2.speedY * player2.direction;
+      if (player2.y <= 0 || player2.y + player2.height >= canvas.height) {
+        player2.direction *= -1;
+      }
+
+      // Atualização dos projéteis
+      for (let i = bullets.length - 1; i >= 0; i--) {
+        const b = bullets[i];
+        b.x += b.speedX;
+
+        // Remover tiro fora da tela
+        if (b.x < 0 || b.x > canvas.width) {
+          bullets.splice(i, 1);
+          continue;
+        }
+
+        // Colisão: Tiro do Jogador 1 acerta Jogador 2
+        if (
+          b.owner === 1 &&
+          b.x + b.width >= player2.x &&
+          b.y + b.height >= player2.y &&
+          b.y <= player2.y + player2.height
+        ) {
+          p1Score++;
+          p1ScoreEl.textContent = p1Score;
+          bullets.splice(i, 1);
+        }
+
+        // Colisão: Tiro do Jogador 2 acerta Jogador 1
+        else if (
+          b.owner === 2 &&
+          b.x <= player1.x + player1.width &&
+          b.y + b.height >= player1.y &&
+          b.y <= player1.y + player1.height
+        ) {
+          p2Score++;
+          p2ScoreEl.textContent = p2Score;
+          bullets.splice(i, 1);
+        }
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Desenha Jogador 1
+      ctx.fillStyle = player1.color;
+      ctx.fillRect(player1.x, player1.y, player1.width, player1.height);
+
+      // Desenha Jogador 2
+      ctx.fillStyle = player2.color;
+      ctx.fillRect(player2.x, player2.y, player2.width, player2.height);
+
+      // Desenha Tiros
+      bullets.forEach((b) => {
+        ctx.fillStyle = b.color;
+        ctx.fillRect(b.x, b.y, b.width, b.height);
+      });
+    }
+
+    function gameLoop() {
+      update();
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
+
+    gameLoop();
+  </script>
+</body>
+</html>
